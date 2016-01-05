@@ -2,7 +2,6 @@ var SteamCommunity = require('../index.js');
 var Cheerio = require('cheerio');
 
 SteamCommunity.prototype.getMarketItem = function(appid, hashName, currency, callback) {
-	// steamCommunity.getMarketItem(appID, hashName, function(){...});
 	if (typeof currency == "function") {
 		callback = currency;
 		currency = 1;
@@ -20,7 +19,7 @@ SteamCommunity.prototype.getMarketItem = function(appid, hashName, currency, cal
 		}
 
 		var item = new CMarketItem(appid, hashName, self, body, $);
-		item.updatePrice({currency: currency}, function(err) {
+		item.updatePrice(currency, function(err) {
 			if(err) {
 				callback(err);
 			} else {
@@ -87,41 +86,22 @@ function CMarketItem(appid, hashName, community, body, $) {
 
 	this.quantity = 0;
 	this.lowestPrice = 0;
-	
-	if(!this.commodity) {
-		var total = $('#searchResults_total');
-		if(total) {
-			this.quantity = parseInt(total.text().replace(/[^\d]/g, '').trim(), 10);
-		}
-		
-		var lowest = $('.market_listing_price.market_listing_price_with_fee');
-		if(lowest[0]) {
-			this.lowestPrice = parseInt($(lowest[0]).text().replace(/[^\d]/g, '').trim(), 10);
-		}
-	}
-	
 	// TODO: Buying listings and placing buy orders
 }
 
-CMarketItem.prototype.updatePrice = function (options, callback) {
-	options = options || {};
-	options.currency = options.currency || 1;
-
+CMarketItem.prototype.updatePrice = function (currency, callback) {
 	if (this.commodity) {
-		this.updatePriceForCommodity(options, callback);
+		this.updatePriceForCommodity(currency, callback);
 	} else {
-		this.updatePriceForNonCommodity(options, callback);
+		this.updatePriceForNonCommodity(currency, callback);
 	}
 };
 
-CMarketItem.prototype.updatePriceForCommodity = function(options, callback) {
+CMarketItem.prototype.updatePriceForCommodity = function(currency, callback) {
 	if(!this.commodity) {
 		throw new Error("Cannot update price for non-commodity item");
 	}
 
-	options = options || {};
-	var currency = options.currency;
-	
 	var self = this;
 	this._community.request({
 		"uri": "https://steamcommunity.com/market/itemordershistogram?country=US&language=english&currency=" + currency + "&item_nameid=" + this.commodityID,
@@ -160,13 +140,10 @@ CMarketItem.prototype.updatePriceForCommodity = function(options, callback) {
 	});
 };
 
-CMarketItem.prototype.updatePriceForNonCommodity = function (options, callback) {
+CMarketItem.prototype.updatePriceForNonCommodity = function (currency, callback) {
 	if(this.commodity) {
 		throw new Error("Cannot update price for commodity item");
 	}
-
-	options = options || {};
-	var currency = options.currency;
 
 	var self = this;
 	this._community.request({
@@ -197,7 +174,7 @@ CMarketItem.prototype.updatePriceForNonCommodity = function (options, callback) 
 			for (var i = 0; i < match.length; i++) {
 				lowestPrice = parseFloat($(match[i]).text().replace(",", ".").replace(/[^\d.]/g, ''));
 				if (!isNaN(lowestPrice)) {
-					self.lowestPrice = lowestPrice * 100;
+					self.lowestPrice = lowestPrice;
 					break;
 				}
 			}
