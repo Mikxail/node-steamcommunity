@@ -77,7 +77,8 @@ function CMarketItem(appid, hashName, community, body, $) {
 	if (match) {
 		try {
 			this.assets = JSON.parse(match[1]);
-			this.assets = this.assets['730']['2'];
+			this.assets = this.assets[appid];
+			this.assets = this.assets[Object.keys(this.assets)[0]];
 			this.firstAsset = this.assets[Object.keys(this.assets)[0]];
 		} catch (e) {
 			// ignore
@@ -99,7 +100,8 @@ CMarketItem.prototype.updatePrice = function (currency, callback) {
 
 CMarketItem.prototype.updatePriceForCommodity = function(currency, callback) {
 	if(!this.commodity) {
-		throw new Error("Cannot update price for non-commodity item");
+		callback && callback(new Error("Cannot update price for non-commodity item"));
+		return;
 	}
 
 	var self = this;
@@ -130,8 +132,8 @@ CMarketItem.prototype.updatePriceForCommodity = function(currency, callback) {
 			self.buyQuantity = parseInt(match[1], 10);
 		}
 		
-		self.lowestPrice = parseInt(body.lowest_sell_order, 10);
-		self.highestBuyOrder = parseInt(body.highest_buy_order, 10);
+		self.lowestPrice = parseInt(body.lowest_sell_order, 10) / 100;
+		self.highestBuyOrder = parseInt(body.highest_buy_order, 10) / 100;
 		
 		// TODO: The tables?
 		if(callback) {
@@ -142,7 +144,8 @@ CMarketItem.prototype.updatePriceForCommodity = function(currency, callback) {
 
 CMarketItem.prototype.updatePriceForNonCommodity = function (currency, callback) {
 	if(this.commodity) {
-		throw new Error("Cannot update price for commodity item");
+		callback && callback(new Error("Cannot update price for commodity item"));
+		return;
 	}
 
 	var self = this;
