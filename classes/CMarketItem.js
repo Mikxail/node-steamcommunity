@@ -134,7 +134,10 @@ CMarketItem.prototype.updatePriceForCommodity = function(currency, callback) {
 		
 		self.lowestPrice = parseInt(body.lowest_sell_order, 10) / 100;
 		self.highestBuyOrder = parseInt(body.highest_buy_order, 10) / 100;
-		
+
+		self.buyOrderGraph = body.buy_order_graph || [];
+		self.sellOrderGraph = body.sell_order_graph || [];
+
 		// TODO: The tables?
 		if(callback) {
 			callback(null);
